@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Application Tracker — Brian T. Ramos</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,sans-serif;background:#0F1117;color:#F9FAFB;min-height:100vh;padding:1.25rem}
+  h1{font-size:1.375rem;font-weight:700;letter-spacing:-0.02em}
+  .subtitle{color:#6B7280;font-size:0.8rem;margin-top:0.2rem;margin-bottom:1.25rem}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0.625rem;margin-bottom:1.25rem}
+  .stat-card{background:#1A1D27;border-radius:10px;padding:0.875rem;border:1px solid #2A2D3A}
+  .stat-num{font-size:1.75rem;font-weight:700;line-height:1}
+  .stat-label{font-size:0.7rem;color:#6B7280;margin-top:0.2rem;text-transform:uppercase;letter-spacing:0.04em}
+  .alert{background:#451A03;border:1px solid #92400E;border-radius:10px;padding:0.75rem 1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.625rem}
+  .alert-title{font-weight:600;color:#FCD34D;font-size:0.8rem}
+  .alert-sub{color:#D97706;font-size:0.75rem;margin-top:0.1rem}
+  .top-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.875rem}
+  .app-count{font-size:0.75rem;color:#6B7280}
+  button{cursor:pointer;font-family:inherit}
+  .btn-primary{background:#3B82F6;color:#fff;border:none;border-radius:8px;padding:0.575rem 1.125rem;font-weight:600;font-size:0.8rem}
+  .btn-secondary{background:#2A2D3A;color:#D1D5DB;border:none;border-radius:6px;padding:0.375rem 0.75rem;font-size:0.775rem;font-weight:500}
+  .btn-danger{background:#7F1D1D;color:#FCA5A5;border:none;border-radius:6px;padding:0.375rem 0.75rem;font-size:0.775rem;font-weight:500}
+  .form-box{background:#1A1D27;border:1px solid #2A2D3A;border-radius:12px;padding:1.125rem;margin-bottom:1rem;display:none}
+  .form-box.open{display:block}
+  .form-title{font-size:0.7rem;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.875rem}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.625rem}
+  .form-full{grid-column:1/-1}
+  label{display:block;font-size:0.7rem;color:#6B7280;margin-bottom:0.2rem}
+  input,select,textarea{width:100%;background:#0F1117;border:1px solid #2A2D3A;border-radius:6px;padding:0.45rem 0.6rem;color:#F9FAFB;font-size:0.8rem;font-family:inherit;outline:none}
+  input:focus,select:focus,textarea:focus{border-color:#3B82F6}
+  select option{background:#1A1D27}
+  .status-pills{display:flex;flex-wrap:wrap;gap:0.375rem;margin-top:0.5rem}
+  .status-pill{padding:0.3rem 0.7rem;border-radius:99px;font-size:0.72rem;font-weight:600;border:1.5px solid transparent;background:#0F1117;color:#6B7280}
+  .status-pill.selected{border-color:var(--text)}
+  .app-list{display:flex;flex-direction:column;gap:0.5rem}
+  .app-card{border-radius:10px;overflow:hidden}
+  .app-main{display:grid;grid-template-columns:10px 1fr auto auto;gap:0.625rem;align-items:center;padding:0.75rem 0.875rem;cursor:pointer;user-select:none}
+  .app-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .app-company{font-weight:600;font-size:0.875rem}
+  .app-meta{color:#9CA3AF;font-size:0.75rem;margin-top:0.1rem}
+  .app-pay{color:#10B981;font-size:0.75rem;font-family:monospace;white-space:nowrap}
+  .status-badge{border-radius:99px;padding:0.2rem 0.625rem;font-size:0.65rem;font-weight:700;white-space:nowrap;text-transform:uppercase;letter-spacing:0.04em}
+  .app-expanded{border-top:1px solid #2A2D3A;padding:0.75rem 0.875rem;background:#13151F;display:none}
+  .app-expanded.open{display:block}
+  .followup-warn{color:#F59E0B;font-size:0.75rem;font-weight:600;margin-bottom:0.625rem}
+  .app-notes{color:#9CA3AF;font-size:0.775rem;line-height:1.55;margin-bottom:0.625rem}
+  .followup-date{color:#6B7280;font-size:0.75rem;margin-bottom:0.625rem}
+  .update-label{font-size:0.65rem;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.375rem}
+  .update-pills{display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.75rem}
+  .update-pill{padding:0.25rem 0.6rem;border-radius:99px;font-size:0.68rem;font-weight:600;border:1px solid #2A2D3A;background:transparent;color:#6B7280}
+  .action-row{display:flex;gap:0.4rem}
+  .empty{text-align:center;padding:2.5rem;color:#4B5563;background:#1A1D27;border-radius:12px;border:1px solid #2A2D3A}
+  .empty-icon{font-size:1.75rem;margin-bottom:0.5rem}
+  .empty-title{font-weight:600;font-size:0.9rem}
+  .empty-sub{font-size:0.8rem;margin-top:0.2rem}
+  .save-indicator{font-size:0.7rem;color:#10B981;margin-left:0.5rem}
+  @media(max-width:600px){
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .form-grid{grid-template-columns:1fr}
+    .form-full{grid-column:1}
+    .app-main{grid-template-columns:8px 1fr auto}
+    .app-pay{display:none}
+  }
+</style>
+</head>
+<body>
+
+<h1>Job Application Tracker</h1>
+<div class="subtitle" id="subtitle">Brian T. Ramos · Active Search 2026</div>
+
+<div class="stats">
+  <div class="stat-card"><div class="stat-num" id="s-total" style="color:#3B82F6">0</div><div class="stat-label">Total</div></div>
+  <div class="stat-card"><div class="stat-num" id="s-active" style="color:#8B5CF6">0</div><div class="stat-label">Active</div></div>
+  <div class="stat-card"><div class="stat-num" id="s-interviews" style="color:#06B6D4">0</div><div class="stat-label">Interviews</div></div>
+  <div class="stat-card"><div class="stat-num" id="s-offers" style="color:#10B981">0</div><div class="stat-label">Offers</div></div>
+</div>
+
+<div id="followup-alert" style="display:none" class="alert">
+  <span style="font-size:1.1rem">⏰</span>
+  <div>
+    <div class="alert-title" id="alert-title"></div>
+    <div class="alert-sub">Send a polite check-in message to each highlighted application below.</div>
+  </div>
+</div>
+
+<div class="top-row">
+  <button class="btn-primary" id="toggle-form-btn" onclick="toggleForm()">+ Add Application</button>
+  <span class="app-count" id="app-count"></span>
+</div>
+
+<!-- ADD/EDIT FORM -->
+<div class="form-box" id="form-box">
+  <div class="form-title" id="form-title">New Application</div>
+  <div class="form-grid">
+    <div>
+      <label>Company *</label>
+      <input type="text" id="f-company" placeholder="e.g. Crossing Hurdles / Micro1">
+    </div>
+    <div>
+      <label>Role Title *</label>
+      <input type="text" id="f-role" placeholder="e.g. Office & Admin Specialist">
+    </div>
+    <div>
+      <label>Date Applied</label>
+      <input type="date" id="f-date">
+    </div>
+    <div>
+      <label>Follow-up Date</label>
+      <input type="date" id="f-followup">
+    </div>
+    <div>
+      <label>Pay Rate</label>
+      <input type="text" id="f-pay" placeholder="e.g. $10/hr or $1,600/mo">
+    </div>
+    <div>
+      <label>Platform</label>
+      <select id="f-platform">
+        <option>LinkedIn</option>
+        <option>OnlineJobs.ph</option>
+        <option>Indeed</option>
+        <option>Glassdoor</option>
+        <option>Direct</option>
+        <option>Other</option>
+      </select>
+    </div>
+    <div class="form-full">
+      <label>Status</label>
+      <div class="status-pills" id="form-status-pills"></div>
+    </div>
+    <div class="form-full">
+      <label>Notes</label>
+      <textarea id="f-notes" rows="3" placeholder="Add notes about the role, recruiter, or next steps..."></textarea>
+    </div>
+  </div>
+  <button class="btn-primary" style="margin-top:0.875rem" onclick="submitForm()" id="submit-btn">Save Application</button>
+</div>
+
+<!-- APP LIST -->
+<div id="app-list"></div>
+
+<script>
+const STATUSES = [
+  {value:"applied",label:"Applied",bg:"#1D4ED8",text:"#BFDBFE"},
+  {value:"awaiting",label:"Awaiting Response",bg:"#374151",text:"#D1D5DB"},
+  {value:"interview_scheduled",label:"Interview Scheduled",bg:"#5B21B6",text:"#DDD6FE"},
+  {value:"interviewed",label:"Interviewed",bg:"#0E7490",text:"#A5F3FC"},
+  {value:"offer",label:"Offer Received",bg:"#065F46",text:"#6EE7B7"},
+  {value:"rejected",label:"Rejected",bg:"#7F1D1D",text:"#FCA5A5"},
+  {value:"no_response",label:"No Response",bg:"#1F2937",text:"#9CA3AF"},
+  {value:"withdrawn",label:"Withdrawn",bg:"#374151",text:"#9CA3AF"},
+];
+
+const INITIAL = [{
+  id:"app_1",
+  dateApplied:"2026-07-25",
+  company:"Crossing Hurdles / Micro1",
+  role:"Office & Administrative Domains Specialist",
+  platform:"LinkedIn",
+  payRate:"$20–$40/hr",
+  status:"applied",
+  followUpDate:"2026-08-01",
+  notes:"AI training/annotation role. Referred to Micro1 via Crossing Hurdles email. Submitted application directly on Micro1 platform (jobs.micro1.ai). Resume uploaded. Awaiting AI interview stage."
+}];
+
+// State
+let apps = [];
+let editId = null;
+let formStatus = "applied";
+let expandedId = null;
+let formOpen = false;
+
+const today = new Date().toISOString().split("T")[0];
+
+function getStatus(val) { return STATUSES.find(s=>s.value===val)||STATUSES[0]; }
+
+function isDue(app) {
+  if (!app.followUpDate) return false;
+  if (["offer","rejected","withdrawn","interviewed"].includes(app.status)) return false;
+  return app.followUpDate <= today;
+}
+
+// Storage
+function save() {
+  try { localStorage.setItem("brian_job_tracker_v1", JSON.stringify(apps)); } catch(e){}
+  const el = document.getElementById("subtitle");
+  el.innerHTML = "Brian T. Ramos · Active Search 2026 <span class='save-indicator'>✓ Saved</span>";
+  setTimeout(()=>{ el.textContent = "Brian T. Ramos · Active Search 2026"; }, 1500);
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem("brian_job_tracker_v1");
+    apps = raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(INITIAL));
+  } catch(e) { apps = JSON.parse(JSON.stringify(INITIAL)); }
+}
+
+// Form
+function toggleForm(forEdit) {
+  if (!forEdit) {
+    if (formOpen && !editId) { closeForm(); return; }
+    editId = null;
+    formStatus = "applied";
+    document.getElementById("f-company").value = "";
+    document.getElementById("f-role").value = "";
+    document.getElementById("f-date").value = today;
+    document.getElementById("f-followup").value = "";
+    document.getElementById("f-pay").value = "";
+    document.getElementById("f-platform").value = "LinkedIn";
+    document.getElementById("f-notes").value = "";
+    document.getElementById("form-title").textContent = "New Application";
+    document.getElementById("submit-btn").textContent = "Save Application";
+    document.getElementById("toggle-form-btn").textContent = "Cancel";
+  }
+  formOpen = true;
+  document.getElementById("form-box").classList.add("open");
+  renderFormStatusPills();
+}
+
+function closeForm() {
+  formOpen = false;
+  editId = null;
+  document.getElementById("form-box").classList.remove("open");
+  document.getElementById("toggle-form-btn").textContent = "+ Add Application";
+}
+
+function renderFormStatusPills() {
+  const c = document.getElementById("form-status-pills");
+  c.innerHTML = STATUSES.map(s=>`
+    <button class="status-pill ${formStatus===s.value?'selected':''}"
+      style="--text:${s.text};background:${formStatus===s.value?s.bg:'#0F1117'};color:${formStatus===s.value?s.text:'#6B7280'};border-color:${formStatus===s.value?s.text:'#2A2D3A'}"
+      onclick="selectFormStatus('${s.value}')">${s.label}</button>
+  `).join("");
+}
+
+function selectFormStatus(val) { formStatus = val; renderFormStatusPills(); }
+
+function submitForm() {
+  const company = document.getElementById("f-company").value.trim();
+  const role = document.getElementById("f-role").value.trim();
+  if (!company || !role) { alert("Company and Role are required."); return; }
+  const app = {
+    id: editId || `app_${Date.now()}`,
+    company,
+    role,
+    dateApplied: document.getElementById("f-date").value || today,
+    followUpDate: document.getElementById("f-followup").value,
+    payRate: document.getElementById("f-pay").value.trim(),
+    platform: document.getElementById("f-platform").value,
+    status: formStatus,
+    notes: document.getElementById("f-notes").value.trim()
+  };
+  if (editId) {
+    apps = apps.map(a=>a.id===editId?app:a);
+  } else {
+    apps.push(app);
+  }
+  save(); closeForm(); render();
+}
+
+function startEdit(id) {
+  const app = apps.find(a=>a.id===id);
+  if (!app) return;
+  editId = id;
+  formStatus = app.status;
+  document.getElementById("f-company").value = app.company;
+  document.getElementById("f-role").value = app.role;
+  document.getElementById("f-date").value = app.dateApplied;
+  document.getElementById("f-followup").value = app.followUpDate||"";
+  document.getElementById("f-pay").value = app.payRate||"";
+  document.getElementById("f-platform").value = app.platform;
+  document.getElementById("f-notes").value = app.notes||"";
+  document.getElementById("form-title").textContent = "Edit Application";
+  document.getElementById("submit-btn").textContent = "Save Changes";
+  document.getElementById("toggle-form-btn").textContent = "Cancel";
+  toggleForm(true);
+  expandedId = null;
+  render();
+  document.getElementById("form-box").scrollIntoView({behavior:"smooth"});
+}
+
+function deleteApp(id) {
+  if (!confirm("Delete this application?")) return;
+  apps = apps.filter(a=>a.id!==id);
+  if (expandedId===id) expandedId=null;
+  save(); render();
+}
+
+function toggleExpand(id) {
+  expandedId = expandedId===id ? null : id;
+  render();
+}
+
+function updateStatus(id, val) {
+  apps = apps.map(a=>a.id===id?{...a,status:val}:a);
+  save(); render();
+}
+
+// Main render
+function render() {
+  const sorted = [...apps].sort((a,b)=>{
+    const da=isDue(a)?0:1, db=isDue(b)?0:1;
+    if(da!==db) return da-db;
+    return b.dateApplied.localeCompare(a.dateApplied);
+  });
+
+  // Stats
+  document.getElementById("s-total").textContent = apps.length;
+  document.getElementById("s-active").textContent = apps.filter(a=>["applied","awaiting","interview_scheduled"].includes(a.status)).length;
+  document.getElementById("s-interviews").textContent = apps.filter(a=>["interview_scheduled","interviewed"].includes(a.status)).length;
+  document.getElementById("s-offers").textContent = apps.filter(a=>a.status==="offer").length;
+  document.getElementById("app-count").textContent = `${apps.length} application${apps.length!==1?"s":""}`;
+
+  // Follow-up alert
+  const due = apps.filter(isDue);
+  const alertEl = document.getElementById("followup-alert");
+  if (due.length>0) {
+    alertEl.style.display="flex";
+    document.getElementById("alert-title").textContent = `${due.length} application${due.length>1?"s":""} due for follow-up today`;
+  } else {
+    alertEl.style.display="none";
+  }
+
+  // App list
+  const list = document.getElementById("app-list");
+  if (apps.length===0) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">No applications yet</div><div class="empty-sub">Add your first application above</div></div>`;
+    return;
+  }
+
+  list.innerHTML = `<div class="app-list">${sorted.map(app=>{
+    const st = getStatus(app.status);
+    const d = isDue(app);
+    const exp = expandedId===app.id;
+    const updatePills = STATUSES.map(s=>`
+      <button class="update-pill"
+        onclick="updateStatus('${app.id}','${s.value}')"
+        style="background:${app.status===s.value?s.bg:'transparent'};color:${app.status===s.value?s.text:'#6B7280'};border-color:${app.status===s.value?s.text:'#2A2D3A'}"
+      >${s.label}</button>
+    `).join("");
+    return `
+      <div class="app-card" style="background:${d?'#1C1505':'#1A1D27'};border:1px solid ${d?'#92400E':'#2A2D3A'}">
+        <div class="app-main" onclick="toggleExpand('${app.id}')">
+          <div class="app-dot" style="background:${d?'#F59E0B':st.bg}"></div>
+          <div>
+            <div class="app-company">${app.company}</div>
+            <div class="app-meta">${app.role} · ${app.platform} · ${app.dateApplied}</div>
+          </div>
+          <div class="app-pay">${app.payRate||''}</div>
+          <div class="status-badge" style="background:${st.bg};color:${st.text}">${st.label}</div>
+        </div>
+        <div class="app-expanded ${exp?'open':''}">
+          ${d?`<div class="followup-warn">⏰ Follow-up due ${app.followUpDate} — send a check-in message now</div>`:''}
+          ${app.notes?`<div class="app-notes">${app.notes}</div>`:''}
+          ${app.followUpDate?`<div class="followup-date">📅 Follow-up date: ${app.followUpDate}</div>`:''}
+          <div class="update-label">Quick Status Update</div>
+          <div class="update-pills">${updatePills}</div>
+          <div class="action-row">
+            <button class="btn-secondary" onclick="startEdit('${app.id}')">Edit</button>
+            <button class="btn-danger" onclick="deleteApp('${app.id}')">Delete</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("")}</div>`;
+}
+
+// Init
+load();
+render();
+</script>
+</body>
+</html>
