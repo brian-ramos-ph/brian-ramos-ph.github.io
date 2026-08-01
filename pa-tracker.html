@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prior Authorization Tracker</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#080C14;--surface:#0F1520;--surface2:#161D2E;--border:#1E2740;
+    --accent:#38BDF8;--green:#34D399;--red:#F87171;--amber:#FBBF24;
+    --purple:#A78BFA;--pink:#F472B6;--teal:#22D3EE;
+    --text:#F1F5F9;--text2:#94A3B8;--text3:#475569;
+    --sans:system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;padding:1.25rem;-webkit-font-smoothing:antialiased}
+  button{cursor:pointer;font-family:inherit}
+  input,select,textarea{outline:none;font-family:inherit}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent)!important}
+
+  /* HEADER */
+  .header{margin-bottom:1.25rem;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.5rem}
+  .header-left h1{font-size:1.375rem;font-weight:700;letter-spacing:-0.02em}
+  .header-left p{color:var(--text2);font-size:0.8rem;margin-top:0.2rem}
+  .header-right{display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap}
+  .icon-btn{background:var(--surface);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:0.45rem 0.75rem;font-size:0.78rem;transition:all 0.2s}
+  .icon-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .back-link{font-size:0.78rem;color:var(--text2);text-decoration:none;border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.875rem;transition:all 0.2s}
+  .back-link:hover{border-color:var(--accent);color:var(--accent)}
+
+  /* STATS */
+  .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:0.625rem;margin-bottom:1.25rem}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.875rem}
+  .stat-num{font-size:1.75rem;font-weight:700;line-height:1}
+  .stat-label{font-size:0.68rem;color:var(--text3);margin-top:0.2rem;text-transform:uppercase;letter-spacing:0.04em}
+
+  /* REMINDER PANEL */
+  .reminder-panel{background:#0C1A0C;border:1px solid #166534;border-radius:12px;padding:1rem;margin-bottom:1.25rem;display:none}
+  .reminder-panel.open{display:block}
+  .reminder-panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.875rem}
+  .reminder-panel-title{font-weight:600;font-size:0.9rem;color:#86EFAC}
+  .reminder-dismiss{background:transparent;border:1px solid #166534;color:#4ADE80;border-radius:6px;padding:0.3rem 0.75rem;font-size:0.75rem}
+  .reminder-item{display:flex;align-items:flex-start;gap:0.75rem;padding:0.625rem 0;border-bottom:1px solid #166534}
+  .reminder-item:last-child{border-bottom:none;padding-bottom:0}
+  .reminder-icon{font-size:1rem;flex-shrink:0;margin-top:0.1rem}
+  .reminder-text{flex:1}
+  .reminder-title{font-size:0.82rem;font-weight:600;color:var(--text);margin-bottom:0.1rem}
+  .reminder-sub{font-size:0.75rem;color:var(--text2)}
+  .reminder-actions{display:flex;gap:0.375rem;margin-top:0.375rem}
+  .btn-email{background:#065F46;color:#6EE7B7;border:none;border-radius:6px;padding:0.3rem 0.7rem;font-size:0.72rem;font-weight:600}
+  .btn-email:hover{background:#047857}
+  .btn-copy-text{background:var(--surface2);color:var(--text2);border:none;border-radius:6px;padding:0.3rem 0.7rem;font-size:0.72rem}
+
+  /* SETTINGS MODAL */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:none;align-items:center;justify-content:center}
+  .modal-overlay.open{display:flex}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.5rem;width:90%;max-width:420px}
+  .modal-title{font-weight:700;font-size:1rem;margin-bottom:0.25rem}
+  .modal-sub{font-size:0.8rem;color:var(--text2);margin-bottom:1.25rem}
+  .modal-label{font-size:0.72rem;color:var(--text2);margin-bottom:0.25rem;display:block}
+  .modal-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.75rem;color:var(--text);font-size:0.85rem;margin-bottom:1rem}
+  .modal-actions{display:flex;gap:0.5rem;justify-content:flex-end}
+  .btn-primary{background:var(--accent);color:#080C14;border:none;border-radius:8px;padding:0.575rem 1.125rem;font-weight:600;font-size:0.8rem}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:0.5rem 1rem;font-size:0.8rem;font-weight:500}
+
+  /* ALERTS */
+  .alerts{display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1rem}
+  .alert{border-radius:10px;padding:0.75rem 1rem;display:flex;align-items:flex-start;gap:0.625rem;font-size:0.8rem}
+  .alert-urgent{background:#450A0A;border:1px solid #991B1B}
+  .alert-warn{background:#451A03;border:1px solid #92400E}
+  .alert-info{background:#0C1A3B;border:1px solid #1E3A8A}
+  .alert-title{font-weight:600;margin-bottom:0.1rem}
+  .alert-urgent .alert-title{color:#FCA5A5}
+  .alert-warn .alert-title{color:#FCD34D}
+  .alert-info .alert-title{color:#93C5FD}
+  .alert-sub{color:var(--text2);font-size:0.75rem}
+
+  /* TOOLBAR */
+  .toolbar{display:flex;gap:0.625rem;margin-bottom:0.875rem;flex-wrap:wrap;align-items:center}
+  .filter-select{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.75rem;color:var(--text2);font-size:0.78rem;min-width:140px}
+  .filter-select:focus{border-color:var(--accent);color:var(--text)}
+  .record-count{font-size:0.75rem;color:var(--text3);margin-left:auto}
+
+  /* FORM */
+  .form-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1rem;display:none}
+  .form-box.open{display:block}
+  .form-section-title{font-size:0.68rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin:1rem 0 0.5rem;padding-bottom:0.375rem;border-bottom:1px solid var(--border)}
+  .form-section-title:first-child{margin-top:0}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.625rem}
+  .form-full{grid-column:1/-1}
+  label{display:block;font-size:0.7rem;color:var(--text2);margin-bottom:0.2rem}
+  .field-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.6rem;color:var(--text);font-size:0.8rem}
+  select.field-input option{background:var(--surface)}
+  .field-row{display:flex;gap:0.375rem;align-items:flex-end}
+  .field-row .field-input{flex:1}
+  .gen-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:0.45rem 0.625rem;font-size:0.75rem;white-space:nowrap}
+  .gen-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .status-pills{display:flex;flex-wrap:wrap;gap:0.375rem;margin-top:0.375rem}
+  .form-actions{display:flex;gap:0.5rem;margin-top:1rem}
+  .conditional-field{display:none}
+  .conditional-field.show{display:block}
+
+  /* PA CARDS */
+  .pa-list{display:flex;flex-direction:column;gap:0.5rem}
+  .pa-card{border-radius:10px;overflow:hidden;border:1px solid var(--border)}
+  .pa-main{display:grid;grid-template-columns:auto 1fr auto auto auto;gap:0.625rem;align-items:center;padding:0.75rem 0.875rem;cursor:pointer;background:var(--surface)}
+  .pa-main:hover{background:var(--surface2)}
+  .service-icon{font-size:1.1rem;flex-shrink:0;width:28px;text-align:center}
+  .pa-patient{font-weight:700;font-size:0.875rem;font-family:monospace;letter-spacing:0.02em}
+  .pa-sub{color:var(--text2);font-size:0.75rem;margin-top:0.1rem}
+  .pa-payer{font-size:0.75rem;color:var(--text3);white-space:nowrap}
+  .status-badge{border-radius:99px;padding:0.2rem 0.7rem;font-size:0.65rem;font-weight:700;white-space:nowrap;text-transform:uppercase;letter-spacing:0.04em;flex-shrink:0}
+  .alert-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;align-self:center}
+
+  /* EXPANDED */
+  .pa-expanded{display:none;background:#0A0F1C;border-top:1px solid var(--border);padding:1rem 0.875rem}
+  .pa-expanded.open{display:block}
+
+  /* LIFECYCLE */
+  .lifecycle{display:flex;align-items:center;gap:0;margin-bottom:1rem;overflow-x:auto;padding-bottom:0.25rem}
+  .lc-step{display:flex;align-items:center;gap:0;flex-shrink:0}
+  .lc-node{display:flex;flex-direction:column;align-items:center;gap:0.2rem}
+  .lc-dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--border);background:var(--bg)}
+  .lc-dot.active{border-color:var(--accent);background:var(--accent)}
+  .lc-dot.done{border-color:var(--green);background:var(--green)}
+  .lc-dot.error{border-color:var(--red);background:var(--red)}
+  .lc-dot.warn{border-color:var(--amber);background:var(--amber)}
+  .lc-label{font-size:0.6rem;color:var(--text3);white-space:nowrap;text-align:center;max-width:60px}
+  .lc-label.active{color:var(--accent)}
+  .lc-label.done{color:var(--green)}
+  .lc-label.error{color:var(--red)}
+  .lc-line{width:2rem;height:1px;background:var(--border);flex-shrink:0}
+  .lc-line.done{background:var(--green)}
+  .lc-line.active{background:var(--accent)}
+
+  /* DETAIL */
+  .detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem 1rem;margin-bottom:1rem}
+  .detail-label{font-size:0.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.1rem}
+  .detail-value{font-size:0.8rem;color:var(--text);font-weight:500}
+  .detail-value.mono{font-family:monospace;font-size:0.78rem}
+  .detail-value.green{color:var(--green)}
+  .detail-value.red{color:var(--red)}
+  .detail-value.amber{color:var(--amber)}
+  .detail-value.purple{color:var(--purple)}
+  .detail-notes{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.625rem 0.75rem;font-size:0.8rem;color:var(--text2);line-height:1.55;margin-bottom:1rem}
+  .quick-status-label{font-size:0.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.375rem}
+  .quick-pills{display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.875rem}
+  .quick-pill{padding:0.25rem 0.625rem;border-radius:99px;font-size:0.68rem;font-weight:600;border:1px solid var(--border);background:transparent;color:var(--text3)}
+  .exp-actions{display:flex;gap:0.4rem;flex-wrap:wrap}
+  .btn-sm-sec{background:var(--surface2);color:var(--text2);border:none;border-radius:6px;padding:0.375rem 0.75rem;font-size:0.775rem;font-weight:500}
+  .btn-sm-email{background:#065F46;color:#6EE7B7;border:none;border-radius:6px;padding:0.375rem 0.75rem;font-size:0.775rem;font-weight:500}
+  .btn-sm-danger{background:#450A0A;color:#FCA5A5;border:none;border-radius:6px;padding:0.375rem 0.75rem;font-size:0.775rem;font-weight:500}
+
+  /* EMPTY */
+  .empty{text-align:center;padding:3rem;color:var(--text3);background:var(--surface);border-radius:12px;border:1px solid var(--border)}
+
+  /* FOOTER */
+  .footer{margin-top:2rem;text-align:center;font-size:0.72rem;color:var(--text3);border-top:1px solid var(--border);padding-top:1rem}
+
+  @media(max-width:700px){
+    .stats{grid-template-columns:repeat(3,1fr)}
+    .form-grid{grid-template-columns:1fr 1fr}
+    .detail-grid{grid-template-columns:1fr 1fr}
+    .pa-main{grid-template-columns:auto 1fr auto auto}
+    .pa-payer{display:none}
+  }
+  @media(max-width:480px){
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .form-grid{grid-template-columns:1fr}
+    .form-full{grid-column:1}
+  }
+</style>
+</head>
+<body>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settings-overlay" onclick="if(event.target===this)closeSettings()">
+  <div class="modal">
+    <div class="modal-title">⚙️ Reminder Settings</div>
+    <div class="modal-sub">Set your email address to receive one-click PA reminders.</div>
+    <label class="modal-label">Your Email Address</label>
+    <input class="modal-input" type="email" id="settings-email" placeholder="e.g. brian@serenitypsych.net">
+    <div style="background:var(--surface2);border-radius:8px;padding:0.75rem;margin-bottom:1rem;font-size:0.78rem;color:var(--text2)">
+      <strong style="color:var(--text)">Reminder Schedule:</strong><br>
+      🚨 <strong>Always:</strong> Appeal deadline ≤ 2 days<br>
+      📅 <strong>Daily:</strong> Follow-up due today · Appeal deadline ≤ 7 days · Expiring ≤ 7 days<br>
+      📋 <strong>Weekly:</strong> Stale pending &gt; 14 days · Expiring 8–30 days
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeSettings()">Cancel</button>
+      <button class="btn-primary" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>Prior Authorization Tracker</h1>
+    <p id="subtitle">Outpatient Psychiatric Practice · Full PA Lifecycle Management</p>
+  </div>
+  <div class="header-right">
+    <button class="icon-btn" onclick="openSettings()">⚙️ Reminders</button>
+    <a href="./index.html" class="back-link">← Portfolio</a>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat"><div class="stat-num" id="s-total" style="color:var(--accent)">0</div><div class="stat-label">Total Active</div></div>
+  <div class="stat"><div class="stat-num" id="s-pending" style="color:var(--amber)">0</div><div class="stat-label">Pending</div></div>
+  <div class="stat"><div class="stat-num" id="s-approved" style="color:var(--green)">0</div><div class="stat-label">Approved</div></div>
+  <div class="stat"><div class="stat-num" id="s-denied" style="color:var(--red)">0</div><div class="stat-label">Denied / Appeal</div></div>
+  <div class="stat"><div class="stat-num" id="s-expiring" style="color:var(--purple)">0</div><div class="stat-label">Expiring ≤30d</div></div>
+</div>
+
+<!-- REMINDER PANEL -->
+<div class="reminder-panel" id="reminder-panel">
+  <div class="reminder-panel-header">
+    <div class="reminder-panel-title">📬 Email Reminders Ready</div>
+    <div style="display:flex;gap:0.375rem">
+      <button class="btn-email" onclick="sendAllReminders()">Send All</button>
+      <button class="reminder-dismiss" onclick="dismissReminders()">Dismiss</button>
+    </div>
+  </div>
+  <div id="reminder-items"></div>
+</div>
+
+<!-- ALERTS -->
+<div id="alerts-container" class="alerts"></div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <button class="btn-primary" id="add-btn" onclick="toggleForm()">+ New PA</button>
+  <select class="filter-select" id="f-status" onchange="applyFilters()">
+    <option value="all">All Statuses</option>
+    <option value="submitted">Submitted</option>
+    <option value="pending_review">Pending — Under Review</option>
+    <option value="pending_info">Pending — Info Requested</option>
+    <option value="approved">Approved</option>
+    <option value="denied">Denied</option>
+    <option value="appeal_filed">Appeal Filed</option>
+    <option value="appeal_pending">Appeal Pending</option>
+    <option value="appeal_approved">Appeal Approved</option>
+    <option value="appeal_denied">Appeal Denied</option>
+    <option value="expired">Expired</option>
+  </select>
+  <select class="filter-select" id="f-service" onchange="applyFilters()">
+    <option value="all">All Service Types</option>
+    <option value="medication">Psychiatric Medication</option>
+    <option value="spravato">Spravato / Esketamine</option>
+    <option value="therapy">Therapy / TMS</option>
+    <option value="dme">DME</option>
+    <option value="specialty">Specialty Pharmacy</option>
+    <option value="other">Other</option>
+  </select>
+  <select class="filter-select" id="f-payer" onchange="applyFilters()">
+    <option value="all">All Payers</option>
+    <option>Cigna</option><option>BCBS NC</option><option>BCBS TX</option>
+    <option>BCBS FEP</option><option>UHC / Optum</option><option>Aetna</option>
+    <option>Meritain Health</option><option>TRICARE</option><option>WellCare</option>
+    <option>Healthy Blue</option><option>Carolina Complete Health</option>
+    <option>NC Medicaid</option><option>Other</option>
+  </select>
+  <span class="record-count" id="record-count"></span>
+</div>
+
+<!-- FORM -->
+<div class="form-box" id="form-box">
+  <div id="form-title-label" style="font-size:0.7rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.875rem">New Prior Authorization</div>
+  <div class="form-grid">
+    <div class="form-full"><div class="form-section-title">Patient & Insurance</div></div>
+    <div>
+      <label>Patient ID *</label>
+      <div class="field-row">
+        <input class="field-input" id="f-patient" placeholder="e.g. Patient 042">
+        <button class="gen-btn" onclick="generatePatientId()" title="Generate random ID">🎲 Generate</button>
+      </div>
+    </div>
+    <div>
+      <label>Payer / Insurance *</label>
+      <select class="field-input" id="f-payer-input">
+        <option value="">Select payer...</option>
+        <option>Cigna</option><option>BCBS NC</option><option>BCBS TX</option>
+        <option>BCBS FEP</option><option>UHC / Optum</option><option>Aetna</option>
+        <option>Meritain Health</option><option>TRICARE</option><option>WellCare</option>
+        <option>Healthy Blue</option><option>Carolina Complete Health</option>
+        <option>NC Medicaid</option><option>Other</option>
+      </select>
+    </div>
+    <div>
+      <label>Prescribing Provider</label>
+      <input class="field-input" id="f-provider" placeholder="e.g. Dr. Phil Johns">
+    </div>
+
+    <div class="form-full"><div class="form-section-title">Service Details</div></div>
+    <div>
+      <label>Service Type *</label>
+      <select class="field-input" id="f-service-type">
+        <option value="">Select type...</option>
+        <option value="medication">Psychiatric Medication</option>
+        <option value="spravato">Spravato / Esketamine</option>
+        <option value="therapy">Therapy / TMS</option>
+        <option value="dme">DME</option>
+        <option value="specialty">Specialty Pharmacy</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div>
+      <label>Medication / Service Name *</label>
+      <input class="field-input" id="f-service-name" placeholder="e.g. Vyvanse 70mg · 30-day supply">
+    </div>
+    <div>
+      <label>Diagnosis Code (ICD-10)</label>
+      <input class="field-input" id="f-diagnosis" placeholder="e.g. F90.0">
+    </div>
+
+    <div class="form-full"><div class="form-section-title">Submission</div></div>
+    <div>
+      <label>Date Submitted</label>
+      <input type="date" class="field-input" id="f-date-submitted">
+    </div>
+    <div>
+      <label>Submission Method</label>
+      <select class="field-input" id="f-method">
+        <option value="portal">Payer Portal</option>
+        <option value="fax">Fax</option>
+        <option value="phone">Phone</option>
+        <option value="covermymeds">CoverMyMeds</option>
+        <option value="surescripts">Surescripts</option>
+      </select>
+    </div>
+    <div>
+      <label>Follow-up Date</label>
+      <input type="date" class="field-input" id="f-followup">
+    </div>
+
+    <div class="form-full"><div class="form-section-title">Current Status</div></div>
+    <div class="form-full">
+      <div class="status-pills" id="form-status-pills"></div>
+    </div>
+
+    <div class="conditional-field" id="cf-auth-num">
+      <label>Auth / Reference Number</label>
+      <input class="field-input" id="f-auth-num" placeholder="e.g. CIG-2026-XXXXX">
+    </div>
+    <div class="conditional-field" id="cf-approval-start">
+      <label>Approval Start Date</label>
+      <input type="date" class="field-input" id="f-approval-start">
+    </div>
+    <div class="conditional-field" id="cf-approval-end">
+      <label>Approval End Date</label>
+      <input type="date" class="field-input" id="f-approval-end">
+    </div>
+    <div class="conditional-field" id="cf-units">
+      <label>Units / Sessions Approved</label>
+      <input class="field-input" id="f-units" placeholder="e.g. 12 sessions · 30-day supply">
+    </div>
+    <div class="conditional-field" id="cf-denial-reason">
+      <label>Denial Reason</label>
+      <input class="field-input" id="f-denial-reason" placeholder="e.g. Not medically necessary">
+    </div>
+    <div class="conditional-field" id="cf-appeal-deadline">
+      <label>Appeal Deadline</label>
+      <input type="date" class="field-input" id="f-appeal-deadline">
+    </div>
+    <div class="conditional-field" id="cf-appeal-submitted">
+      <label>Appeal Submitted Date</label>
+      <input type="date" class="field-input" id="f-appeal-submitted">
+    </div>
+
+    <div class="form-full" style="margin-top:0.25rem">
+      <label>Notes</label>
+      <textarea class="field-input" id="f-notes" rows="3" placeholder="Clinical notes, peer-to-peer request details, follow-up history..."></textarea>
+    </div>
+  </div>
+  <div class="form-actions">
+    <button class="btn-primary" id="submit-btn" onclick="submitForm()">Save PA Record</button>
+    <button class="btn-ghost" onclick="closeForm()">Cancel</button>
+  </div>
+</div>
+
+<div id="pa-list"></div>
+<div class="footer">Prior Authorization Tracker · Built by Brian T. Ramos · <a href="./index.html" style="color:var(--text3)">brian-ramos-ph.github.io</a></div>
+
+<script>
+const TODAY = new Date().toISOString().split('T')[0];
+
+const STATUSES = [
+  {value:'submitted',label:'Submitted',bg:'#1D4ED8',text:'#BFDBFE',phase:1},
+  {value:'pending_review',label:'Pending — Under Review',bg:'#374151',text:'#D1D5DB',phase:2},
+  {value:'pending_info',label:'Pending — Info Requested',bg:'#92400E',text:'#FDE68A',phase:2},
+  {value:'approved',label:'Approved',bg:'#065F46',text:'#6EE7B7',phase:3},
+  {value:'denied',label:'Denied',bg:'#7F1D1D',text:'#FCA5A5',phase:3},
+  {value:'appeal_filed',label:'Appeal Filed',bg:'#7C2D12',text:'#FDBA74',phase:4},
+  {value:'appeal_pending',label:'Appeal Pending',bg:'#713F12',text:'#FDE68A',phase:4},
+  {value:'appeal_approved',label:'Appeal Approved',bg:'#065F46',text:'#6EE7B7',phase:5},
+  {value:'appeal_denied',label:'Appeal Denied',bg:'#7F1D1D',text:'#FCA5A5',phase:5},
+  {value:'expired',label:'Expired',bg:'#1F2937',text:'#6B7280',phase:6},
+  {value:'withdrawn',label:'Withdrawn',bg:'#1F2937',text:'#6B7280',phase:6},
+];
+
+const SERVICES = {
+  medication:{label:'Psychiatric Medication',icon:'💊',color:'#3B82F6'},
+  spravato:{label:'Spravato / Esketamine',icon:'⚗️',color:'#8B5CF6'},
+  therapy:{label:'Therapy / TMS',icon:'🧠',color:'#06B6D4'},
+  dme:{label:'DME',icon:'🏥',color:'#F59E0B'},
+  specialty:{label:'Specialty Pharmacy',icon:'💉',color:'#EC4899'},
+  other:{label:'Other',icon:'📋',color:'#6B7280'},
+};
+
+// Sample data with Patient XXX format
+const INITIAL = [
+  {id:'pa_1',patientCode:'Patient 042',payer:'Cigna',provider:'Dr. Phil Johns',serviceType:'medication',serviceName:'Vyvanse 70mg · 30-day supply',diagnosisCode:'F90.0',dateSubmitted:'2026-06-01',submissionMethod:'portal',authNumber:'CIG-2026-48210',status:'approved',approvalStartDate:'2026-06-15',approvalEndDate:'',unitsApproved:'30-day supply × 3 refills',denialReason:'',appealDeadline:'',appealSubmittedDate:'',followUpDate:'',notes:'Step therapy requirement documented — prior Adderall trial on file. Renewal due before expiration.'},
+  {id:'pa_2',patientCode:'Patient 187',payer:'BCBS NC',provider:'Dr. Phil Johns',serviceType:'spravato',serviceName:'Spravato 56mg · In-office administration',diagnosisCode:'F32.2',dateSubmitted:'2026-07-14',submissionMethod:'covermymeds',authNumber:'',status:'pending_review',approvalStartDate:'',approvalEndDate:'',unitsApproved:'',denialReason:'',appealDeadline:'',appealSubmittedDate:'',followUpDate:'2026-08-03',notes:'Submitted via CoverMyMeds. BCBS NC typically takes 15–20 business days for Spravato. Follow up if no response by 8/3.'},
+  {id:'pa_3',patientCode:'Patient 315',payer:'UHC / Optum',provider:'Dr. Phil Johns',serviceType:'medication',serviceName:'Latuda 80mg · 30-day supply',diagnosisCode:'F31.1',dateSubmitted:'2026-07-20',submissionMethod:'portal',authNumber:'',status:'denied',approvalStartDate:'',approvalEndDate:'',unitsApproved:'',denialReason:'Not medically necessary — generic alternative available',appealDeadline:'2026-08-06',appealSubmittedDate:'',followUpDate:'2026-08-05',notes:'Denial received 7/28. Need peer-to-peer or letter of medical necessity. Appeal deadline 8/6.'},
+  {id:'pa_4',patientCode:'Patient 208',payer:'Aetna',provider:'Dr. Clarissa',serviceType:'therapy',serviceName:'TMS Therapy · 30 sessions',diagnosisCode:'F32.5',dateSubmitted:'2026-07-01',submissionMethod:'portal',authNumber:'AET-TMS-2026-9901',status:'approved',approvalStartDate:'2026-07-10',approvalEndDate:'2026-12-31',unitsApproved:'30 sessions',denialReason:'',appealDeadline:'',appealSubmittedDate:'',followUpDate:'',notes:'Sessions began 7/12. Track session count — re-auth before Dec 31.'},
+  {id:'pa_5',patientCode:'Patient 573',payer:'TRICARE',provider:'Dr. Phil Johns',serviceType:'medication',serviceName:'Abilify Maintena 400mg · Monthly injection',diagnosisCode:'F20.9',dateSubmitted:'2026-07-22',submissionMethod:'fax',authNumber:'',status:'pending_info',approvalStartDate:'',approvalEndDate:'',unitsApproved:'',denialReason:'',appealDeadline:'',appealSubmittedDate:'',followUpDate:'2026-08-03',notes:'TRICARE requested recent GAF score and treatment history. Faxed additional docs 7/28. Awaiting confirmation.'},
+];
+
+// STATE
+let pas=[], editId=null, formOpen=false, formStatus='submitted', expandedId=null;
+let filters={status:'all',service:'all',payer:'all'};
+let settings={email:''};
+let reminderLog={};
+let pendingReminders=[];
+
+// UTILS
+function daysBetween(a,b){return Math.round((new Date(b)-new Date(a))/(864e5))}
+function daysUntil(d){return d?daysBetween(TODAY,d):null}
+function daysSince(d){return d?daysBetween(d,TODAY):null}
+function getStatus(v){return STATUSES.find(s=>s.value===v)||STATUSES[0]}
+function getService(v){return SERVICES[v]||SERVICES.other}
+function pad3(n){return String(n).padStart(3,'0')}
+function generatePatientId(){
+  const n=Math.floor(Math.random()*900)+100;
+  document.getElementById('f-patient').value=`Patient ${n}`;
+}
+
+// REMINDER CONDITIONS
+function isExpiringSoon(pa){
+  if(!['approved','appeal_approved'].includes(pa.status)||!pa.approvalEndDate) return false;
+  const d=daysUntil(pa.approvalEndDate);return d!==null&&d>=0&&d<=30;
+}
+function isStale(pa){
+  if(!['submitted','pending_review','pending_info'].includes(pa.status)) return false;
+  return daysSince(pa.dateSubmitted)>14;
+}
+function isAppealUrgent(pa){
+  if(pa.status!=='denied'||!pa.appealDeadline) return false;
+  const d=daysUntil(pa.appealDeadline);return d!==null&&d<=5;
+}
+function isFollowUpToday(pa){return pa.followUpDate===TODAY;}
+
+// REMINDER SCHEDULING
+// Frequency: immediate (no throttle) | daily | weekly
+function shouldSend(paId, type, frequency){
+  const key=`${paId}_${type}`;
+  const last=reminderLog[key];
+  if(!last) return true;
+  if(frequency==='always') return true;
+  const daysSinceLast=daysBetween(last,TODAY);
+  if(frequency==='daily') return daysSinceLast>=1;
+  if(frequency==='weekly') return daysSinceLast>=7;
+  return true;
+}
+function markSent(paId, type){
+  reminderLog[`${paId}_${type}`]=TODAY;
+  try{localStorage.setItem('brian_pa_reminder_log',JSON.stringify(reminderLog));}catch(e){}
+}
+
+// BUILD MAILTO
+function buildMailto(pa, type){
+  const email=settings.email||'';
+  const svc=getService(pa.serviceType);
+  let subject='', body='';
+  const base=`Patient ID: ${pa.patientCode}\nService: ${pa.serviceName}\nPayer: ${pa.payer}\nProvider: ${pa.provider||'N/A'}\nDiagnosis: ${pa.diagnosisCode||'N/A'}\nDate Submitted: ${pa.dateSubmitted||'N/A'}`;
+
+  if(type==='appeal_urgent'){
+    const d=daysUntil(pa.appealDeadline);
+    subject=`🚨 URGENT: PA Appeal Deadline in ${d} Day(s) — ${pa.patientCode} / ${pa.payer}`;
+    body=`URGENT PRIOR AUTHORIZATION APPEAL REMINDER\n\n${base}\n\nStatus: DENIED\nDenial Reason: ${pa.denialReason||'N/A'}\nAppeal Deadline: ${pa.appealDeadline} (${d} day(s) remaining)\n\nACTION REQUIRED: File appeal immediately to avoid missing the deadline.\n\nNotes: ${pa.notes||'None'}`;
+  } else if(type==='appeal_warning'){
+    const d=daysUntil(pa.appealDeadline);
+    subject=`⚠️ PA Appeal Deadline in ${d} Days — ${pa.patientCode} / ${pa.payer}`;
+    body=`PRIOR AUTHORIZATION APPEAL DEADLINE REMINDER\n\n${base}\n\nStatus: DENIED\nDenial Reason: ${pa.denialReason||'N/A'}\nAppeal Deadline: ${pa.appealDeadline} (${d} days remaining)\n\nPlease ensure appeal documentation is prepared and filed before the deadline.\n\nNotes: ${pa.notes||'None'}`;
+  } else if(type==='expiry_urgent'){
+    const d=daysUntil(pa.approvalEndDate);
+    subject=`⏰ PA Expiring in ${d} Days — ${pa.patientCode} / ${pa.serviceName}`;
+    body=`PRIOR AUTHORIZATION EXPIRATION REMINDER\n\n${base}\n\nAuth Number: ${pa.authNumber||'N/A'}\nApproval Period: ${pa.approvalStartDate} to ${pa.approvalEndDate}\nDays Remaining: ${d}\n\nACTION REQUIRED: Initiate renewal authorization immediately.\n\nNotes: ${pa.notes||'None'}`;
+  } else if(type==='expiry_warning'){
+    const d=daysUntil(pa.approvalEndDate);
+    subject=`📋 PA Renewal Needed — ${pa.patientCode} / ${pa.serviceName} — Expires ${pa.approvalEndDate}`;
+    body=`PRIOR AUTHORIZATION RENEWAL REMINDER\n\n${base}\n\nAuth Number: ${pa.authNumber||'N/A'}\nApproval Period: ${pa.approvalStartDate} to ${pa.approvalEndDate}\nDays Until Expiration: ${d}\n\nPlease begin the renewal process to avoid a lapse in authorization.\n\nNotes: ${pa.notes||'None'}`;
+  } else if(type==='followup'){
+    subject=`📅 PA Follow-up Due Today — ${pa.patientCode} / ${pa.payer}`;
+    body=`PRIOR AUTHORIZATION FOLLOW-UP REMINDER\n\n${base}\n\nCurrent Status: ${getStatus(pa.status).label}\nFollow-up Date: ${pa.followUpDate}\n\nPlease follow up with ${pa.payer} on the status of this prior authorization.\n\nNotes: ${pa.notes||'None'}`;
+  } else if(type==='stale'){
+    const d=daysSince(pa.dateSubmitted);
+    subject=`⏳ PA Pending ${d} Days — Follow Up Required — ${pa.patientCode} / ${pa.payer}`;
+    body=`STALE PRIOR AUTHORIZATION REMINDER\n\n${base}\n\nCurrent Status: ${getStatus(pa.status).label}\nDays Since Submission: ${d}\n\nThis PA has been pending for over 14 days. Please follow up with ${pa.payer} to check status.\n\nNotes: ${pa.notes||'None'}`;
+  }
+
+  const encoded=`mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  return {href:encoded,subject};
+}
+
+// CHECK REMINDERS ON LOAD
+function checkReminders(){
+  pendingReminders=[];
+  pas.forEach(pa=>{
+    const d_appeal=pa.appealDeadline?daysUntil(pa.appealDeadline):null;
+    const d_expiry=pa.approvalEndDate?daysUntil(pa.approvalEndDate):null;
+
+    // Appeal deadline ≤ 2 days — ALWAYS
+    if(pa.status==='denied'&&d_appeal!==null&&d_appeal<=2&&d_appeal>=0){
+      if(shouldSend(pa.id,'appeal_urgent','always'))
+        pendingReminders.push({pa,type:'appeal_urgent',freq:'always',icon:'🚨',title:`Appeal Deadline: ${d_appeal} day(s) left`,sub:`${pa.patientCode} · ${pa.payer} · ${pa.serviceName}`});
+    }
+    // Appeal deadline 3–7 days — DAILY
+    else if(pa.status==='denied'&&d_appeal!==null&&d_appeal<=7&&d_appeal>2){
+      if(shouldSend(pa.id,'appeal_warning','daily'))
+        pendingReminders.push({pa,type:'appeal_warning',freq:'daily',icon:'⚠️',title:`Appeal Deadline in ${d_appeal} days`,sub:`${pa.patientCode} · ${pa.payer} · ${pa.serviceName}`});
+    }
+    // Follow-up due today — DAILY
+    if(isFollowUpToday(pa)){
+      if(shouldSend(pa.id,'followup','daily'))
+        pendingReminders.push({pa,type:'followup',freq:'daily',icon:'📅',title:`Follow-up due today`,sub:`${pa.patientCode} · ${pa.payer} · ${getStatus(pa.status).label}`});
+    }
+    // Expiring ≤ 7 days — DAILY
+    if(['approved','appeal_approved'].includes(pa.status)&&d_expiry!==null&&d_expiry<=7&&d_expiry>=0){
+      if(shouldSend(pa.id,'expiry_urgent','daily'))
+        pendingReminders.push({pa,type:'expiry_urgent',freq:'daily',icon:'⏰',title:`Authorization expires in ${d_expiry} days`,sub:`${pa.patientCode} · ${pa.serviceName} · expires ${pa.approvalEndDate}`});
+    }
+    // Expiring 8–30 days — WEEKLY
+    else if(['approved','appeal_approved'].includes(pa.status)&&d_expiry!==null&&d_expiry<=30&&d_expiry>7){
+      if(shouldSend(pa.id,'expiry_warning','weekly'))
+        pendingReminders.push({pa,type:'expiry_warning',freq:'weekly',icon:'📋',title:`Authorization expires in ${d_expiry} days — start renewal`,sub:`${pa.patientCode} · ${pa.serviceName} · expires ${pa.approvalEndDate}`});
+    }
+    // Stale pending > 14 days — WEEKLY
+    if(isStale(pa)){
+      if(shouldSend(pa.id,'stale','weekly'))
+        pendingReminders.push({pa,type:'stale',freq:'weekly',icon:'⏳',title:`Pending ${daysSince(pa.dateSubmitted)} days — follow up with payer`,sub:`${pa.patientCode} · ${pa.payer} · submitted ${pa.dateSubmitted}`});
+    }
+  });
+  renderReminderPanel();
+}
+
+function renderReminderPanel(){
+  const panel=document.getElementById('reminder-panel');
+  const items=document.getElementById('reminder-items');
+  if(pendingReminders.length===0){panel.classList.remove('open');return;}
+  panel.classList.add('open');
+  items.innerHTML=pendingReminders.map((r,i)=>{
+    const mail=buildMailto(r.pa,r.type);
+    return `<div class="reminder-item">
+      <div class="reminder-icon">${r.icon}</div>
+      <div class="reminder-text">
+        <div class="reminder-title">${r.title}</div>
+        <div class="reminder-sub">${r.sub}</div>
+        <div class="reminder-actions">
+          <a href="${mail.href}" onclick="markSent('${r.pa.id}','${r.type}')" target="_blank"><button class="btn-email">📧 Open Email</button></a>
+          <button class="btn-copy-text" onclick="copyReminderText(${i})">Copy text</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function copyReminderText(i){
+  const r=pendingReminders[i];
+  const mail=buildMailto(r.pa,r.type);
+  const text=decodeURIComponent(mail.href.split('body=')[1]||'');
+  navigator.clipboard.writeText(text).then(()=>{alert('Reminder text copied to clipboard!');});
+}
+
+function sendAllReminders(){
+  if(!settings.email){openSettings();return;}
+  pendingReminders.forEach((r,i)=>{
+    setTimeout(()=>{
+      const mail=buildMailto(r.pa,r.type);
+      window.open(mail.href);
+      markSent(r.pa.id,r.type);
+    },i*300);
+  });
+  setTimeout(()=>{pendingReminders=[];renderReminderPanel();},pendingReminders.length*300+200);
+}
+
+function dismissReminders(){
+  pendingReminders.forEach(r=>markSent(r.pa.id,r.type));
+  pendingReminders=[];
+  renderReminderPanel();
+}
+
+// SETTINGS
+function openSettings(){
+  document.getElementById('settings-email').value=settings.email||'';
+  document.getElementById('settings-overlay').classList.add('open');
+}
+function closeSettings(){document.getElementById('settings-overlay').classList.remove('open');}
+function saveSettings(){
+  settings.email=document.getElementById('settings-email').value.trim();
+  try{localStorage.setItem('brian_pa_settings',JSON.stringify(settings));}catch(e){}
+  closeSettings();
+}
+
+// STORAGE
+function save(){
+  try{localStorage.setItem('brian_pa_tracker_v1',JSON.stringify(pas));}catch(e){}
+  const el=document.getElementById('subtitle');
+  el.innerHTML='Outpatient Psychiatric Practice · Full PA Lifecycle Management <span style="color:var(--green);font-size:0.72rem">✓ Saved</span>';
+  setTimeout(()=>{el.textContent='Outpatient Psychiatric Practice · Full PA Lifecycle Management';},1500);
+}
+function load(){
+  try{
+    const r=localStorage.getItem('brian_pa_tracker_v1');
+    pas=r?JSON.parse(r):JSON.parse(JSON.stringify(INITIAL));
+    const s=localStorage.getItem('brian_pa_settings');
+    if(s)settings=JSON.parse(s);
+    const rl=localStorage.getItem('brian_pa_reminder_log');
+    if(rl)reminderLog=JSON.parse(rl);
+  }catch(e){pas=JSON.parse(JSON.stringify(INITIAL));}
+}
+
+// FORM
+function toggleForm(forEdit){
+  if(!forEdit&&formOpen&&!editId){closeForm();return;}
+  if(!forEdit){
+    editId=null;formStatus='submitted';
+    ['f-patient','f-provider','f-service-name','f-diagnosis','f-auth-num','f-units','f-denial-reason','f-appeal-submitted','f-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    ['f-date-submitted','f-followup','f-approval-start','f-approval-end','f-appeal-deadline'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    document.getElementById('f-payer-input').value='';
+    document.getElementById('f-service-type').value='';
+    document.getElementById('f-method').value='portal';
+    document.getElementById('form-title-label').textContent='New Prior Authorization';
+    document.getElementById('submit-btn').textContent='Save PA Record';
+    document.getElementById('add-btn').textContent='Cancel';
+  }
+  formOpen=true;
+  document.getElementById('form-box').classList.add('open');
+  renderFormStatusPills();
+  updateConditionalFields();
+}
+function closeForm(){
+  formOpen=false;editId=null;
+  document.getElementById('form-box').classList.remove('open');
+  document.getElementById('add-btn').textContent='+ New PA';
+}
+function renderFormStatusPills(){
+  document.getElementById('form-status-pills').innerHTML=STATUSES.map(s=>`
+    <button class="status-pill" onclick="selectFormStatus('${s.value}')"
+      style="padding:0.3rem 0.7rem;border-radius:99px;font-size:0.7rem;font-weight:600;border:1.5px solid ${formStatus===s.value?s.text:'var(--border)'};background:${formStatus===s.value?s.bg:'var(--bg)'};color:${formStatus===s.value?s.text:'var(--text3)'};"
+    >${s.label}</button>`).join('');
+}
+function selectFormStatus(v){formStatus=v;renderFormStatusPills();updateConditionalFields();}
+function updateConditionalFields(){
+  const approvalShow=['approved','appeal_approved'].includes(formStatus);
+  const denialShow=['denied','appeal_filed','appeal_pending','appeal_approved','appeal_denied'].includes(formStatus);
+  const appealShow=['appeal_filed','appeal_pending','appeal_approved','appeal_denied'].includes(formStatus);
+  ['cf-auth-num','cf-approval-start','cf-approval-end','cf-units'].forEach(id=>document.getElementById(id).classList.toggle('show',approvalShow));
+  ['cf-denial-reason','cf-appeal-deadline'].forEach(id=>document.getElementById(id).classList.toggle('show',denialShow));
+  document.getElementById('cf-appeal-submitted').classList.toggle('show',appealShow);
+}
+function submitForm(){
+  const patient=document.getElementById('f-patient').value.trim();
+  const payer=document.getElementById('f-payer-input').value;
+  const svc=document.getElementById('f-service-type').value;
+  const name=document.getElementById('f-service-name').value.trim();
+  if(!patient||!payer||!svc||!name){alert('Patient ID, Payer, Service Type, and Service Name are required.');return;}
+  const pa={
+    id:editId||`pa_${Date.now()}`,
+    patientCode:patient,payer,provider:document.getElementById('f-provider').value.trim(),
+    serviceType:svc,serviceName:name,
+    diagnosisCode:document.getElementById('f-diagnosis').value.trim(),
+    dateSubmitted:document.getElementById('f-date-submitted').value,
+    submissionMethod:document.getElementById('f-method').value,
+    authNumber:document.getElementById('f-auth-num').value.trim(),
+    status:formStatus,
+    approvalStartDate:document.getElementById('f-approval-start').value,
+    approvalEndDate:document.getElementById('f-approval-end').value,
+    unitsApproved:document.getElementById('f-units').value.trim(),
+    denialReason:document.getElementById('f-denial-reason').value.trim(),
+    appealDeadline:document.getElementById('f-appeal-deadline').value,
+    appealSubmittedDate:document.getElementById('f-appeal-submitted').value,
+    followUpDate:document.getElementById('f-followup').value,
+    notes:document.getElementById('f-notes').value.trim(),
+  };
+  if(editId){pas=pas.map(p=>p.id===editId?pa:p);}else{pas.push(pa);}
+  save();closeForm();checkReminders();render();
+}
+function startEdit(id){
+  const pa=pas.find(p=>p.id===id);if(!pa)return;
+  editId=id;formStatus=pa.status;
+  document.getElementById('f-patient').value=pa.patientCode;
+  document.getElementById('f-payer-input').value=pa.payer;
+  document.getElementById('f-provider').value=pa.provider||'';
+  document.getElementById('f-service-type').value=pa.serviceType;
+  document.getElementById('f-service-name').value=pa.serviceName;
+  document.getElementById('f-diagnosis').value=pa.diagnosisCode||'';
+  document.getElementById('f-date-submitted').value=pa.dateSubmitted||'';
+  document.getElementById('f-method').value=pa.submissionMethod||'portal';
+  document.getElementById('f-auth-num').value=pa.authNumber||'';
+  document.getElementById('f-approval-start').value=pa.approvalStartDate||'';
+  document.getElementById('f-approval-end').value=pa.approvalEndDate||'';
+  document.getElementById('f-units').value=pa.unitsApproved||'';
+  document.getElementById('f-denial-reason').value=pa.denialReason||'';
+  document.getElementById('f-appeal-deadline').value=pa.appealDeadline||'';
+  document.getElementById('f-appeal-submitted').value=pa.appealSubmittedDate||'';
+  document.getElementById('f-followup').value=pa.followUpDate||'';
+  document.getElementById('f-notes').value=pa.notes||'';
+  document.getElementById('form-title-label').textContent='Edit PA Record';
+  document.getElementById('submit-btn').textContent='Save Changes';
+  document.getElementById('add-btn').textContent='Cancel';
+  toggleForm(true);expandedId=null;render();
+  document.getElementById('form-box').scrollIntoView({behavior:'smooth'});
+}
+function deletePa(id){
+  if(!confirm('Delete this PA record?'))return;
+  pas=pas.filter(p=>p.id!==id);
+  if(expandedId===id)expandedId=null;
+  save();checkReminders();render();
+}
+function updateStatus(id,v){
+  pas=pas.map(p=>p.id===id?{...p,status:v}:p);
+  save();checkReminders();render();
+}
+function toggleExpand(id){expandedId=expandedId===id?null:id;render();}
+function applyFilters(){
+  filters.status=document.getElementById('f-status').value;
+  filters.service=document.getElementById('f-service').value;
+  filters.payer=document.getElementById('f-payer').value;
+  render();
+}
+
+// LIFECYCLE
+function renderLifecycle(pa){
+  const phases=[
+    {label:'Submitted',states:['submitted'],},
+    {label:'Under Review',states:['pending_review','pending_info']},
+    {label:'Decision',states:['approved','denied']},
+    {label:'Appeal',states:['appeal_filed','appeal_pending']},
+    {label:'Resolution',states:['appeal_approved','appeal_denied','expired','withdrawn']},
+  ];
+  const st=getStatus(pa.status);
+  const currentPhase=st.phase;
+  let html='<div class="lifecycle">';
+  phases.forEach((ph,i)=>{
+    const isActive=ph.states.includes(pa.status);
+    const isDone=currentPhase>i+1;
+    const isError=['denied','appeal_denied'].includes(pa.status)&&isActive;
+    const dotClass=isActive?(isError?'error':'active'):isDone?'done':'';
+    if(i>0)html+=`<div class="lc-line ${isDone?'done':isActive?'active':''}"></div>`;
+    html+=`<div class="lc-step"><div class="lc-node"><div class="lc-dot ${dotClass}"></div><div class="lc-label ${dotClass}">${ph.label}</div></div></div>`;
+  });
+  return html+'</div>';
+}
+
+// SEND REMINDER FROM CARD
+function sendCardReminder(paId){
+  const pa=pas.find(p=>p.id===paId);if(!pa)return;
+  // determine best type
+  let type='followup';
+  if(pa.status==='denied'&&pa.appealDeadline){
+    const d=daysUntil(pa.appealDeadline);
+    type=d<=2?'appeal_urgent':'appeal_warning';
+  } else if(['approved','appeal_approved'].includes(pa.status)&&pa.approvalEndDate){
+    const d=daysUntil(pa.approvalEndDate);
+    type=d<=7?'expiry_urgent':'expiry_warning';
+  } else if(isStale(pa)){type='stale';}
+  const mail=buildMailto(pa,type);
+  window.open(mail.href);
+  markSent(paId,type);
+}
+
+// MAIN RENDER
+function render(){
+  let filtered=pas.filter(pa=>{
+    if(filters.status!=='all'&&pa.status!==filters.status)return false;
+    if(filters.service!=='all'&&pa.serviceType!==filters.service)return false;
+    if(filters.payer!=='all'&&pa.payer!==filters.payer)return false;
+    return true;
+  });
+  filtered.sort((a,b)=>{
+    const sA=(isAppealUrgent(a)?3:0)+(isExpiringSoon(a)?2:0)+(isStale(a)?1:0);
+    const sB=(isAppealUrgent(b)?3:0)+(isExpiringSoon(b)?2:0)+(isStale(b)?1:0);
+    if(sA!==sB)return sB-sA;
+    return (b.dateSubmitted||'').localeCompare(a.dateSubmitted||'');
+  });
+
+  // Stats
+  document.getElementById('s-total').textContent=pas.filter(p=>!['expired','withdrawn'].includes(p.status)).length;
+  document.getElementById('s-pending').textContent=pas.filter(p=>['submitted','pending_review','pending_info'].includes(p.status)).length;
+  document.getElementById('s-approved').textContent=pas.filter(p=>['approved','appeal_approved'].includes(p.status)).length;
+  document.getElementById('s-denied').textContent=pas.filter(p=>['denied','appeal_filed','appeal_pending','appeal_denied'].includes(p.status)).length;
+  document.getElementById('s-expiring').textContent=pas.filter(isExpiringSoon).length;
+  document.getElementById('record-count').textContent=`${filtered.length} record${filtered.length!==1?'s':''}`;
+
+  // Alerts
+  const urgentAppeals=pas.filter(isAppealUrgent);
+  const expiring=pas.filter(isExpiringSoon);
+  const stale=pas.filter(isStale);
+  let alertsHtml='';
+  if(urgentAppeals.length) alertsHtml+=`<div class="alert alert-urgent"><span style="font-size:1.1rem">🚨</span><div><div class="alert-title">${urgentAppeals.length} denial${urgentAppeals.length>1?'s':''} with urgent appeal deadline</div><div class="alert-sub">${urgentAppeals.map(p=>`${p.patientCode} (${p.payer}) — deadline ${p.appealDeadline}`).join(' · ')}</div></div></div>`;
+  if(expiring.length) alertsHtml+=`<div class="alert alert-warn"><span style="font-size:1.1rem">⏰</span><div><div class="alert-title">${expiring.length} authorization${expiring.length>1?'s':''} expiring within 30 days</div><div class="alert-sub">${expiring.map(p=>`${p.patientCode} — expires ${p.approvalEndDate} (${daysUntil(p.approvalEndDate)} days)`).join(' · ')}</div></div></div>`;
+  if(stale.length) alertsHtml+=`<div class="alert alert-info"><span style="font-size:1.1rem">⏳</span><div><div class="alert-title">${stale.length} pending PA${stale.length>1?'s':''} older than 14 days</div><div class="alert-sub">${stale.map(p=>`${p.patientCode} (${p.payer}) — ${daysSince(p.dateSubmitted)} days since submission`).join(' · ')}</div></div></div>`;
+  document.getElementById('alerts-container').innerHTML=alertsHtml;
+
+  // Cards
+  const container=document.getElementById('pa-list');
+  if(filtered.length===0){
+    container.innerHTML=`<div class="empty"><div style="font-size:2rem;margin-bottom:0.5rem">📋</div><div style="font-weight:600;margin-bottom:0.25rem">No PA records found</div><div style="font-size:0.8rem">${pas.length>0?'Try adjusting your filters.':'Add your first prior authorization above.'}</div></div>`;
+    return;
+  }
+
+  container.innerHTML=`<div class="pa-list">${filtered.map(pa=>{
+    const st=getStatus(pa.status);
+    const svc=getService(pa.serviceType);
+    const exp=expandedId===pa.id;
+    const urgent=isAppealUrgent(pa);
+    const expiring=isExpiringSoon(pa);
+    const stale=isStale(pa);
+    const cardBorder=urgent?'#991B1B':expiring?'#5B21B6':stale?'#92400E':'var(--border)';
+    const daysLeft=pa.approvalEndDate?daysUntil(pa.approvalEndDate):null;
+    const daysSinceSubmit=pa.dateSubmitted?daysSince(pa.dateSubmitted):null;
+    const quickPills=STATUSES.map(s=>`<button class="quick-pill" onclick="updateStatus('${pa.id}','${s.value}')" style="background:${pa.status===s.value?s.bg:'transparent'};color:${pa.status===s.value?s.text:'var(--text3)'};border-color:${pa.status===s.value?s.text:'var(--border)'}">${s.label}</button>`).join('');
+
+    return `<div class="pa-card" style="border-color:${cardBorder}">
+      <div class="pa-main" onclick="toggleExpand('${pa.id}')">
+        <div class="service-icon">${svc.icon}</div>
+        <div>
+          <div class="pa-patient">${pa.patientCode}</div>
+          <div class="pa-sub">${pa.serviceName} · ${pa.dateSubmitted||'No date'}</div>
+        </div>
+        <div class="pa-payer">${pa.payer}</div>
+        <div class="status-badge" style="background:${st.bg};color:${st.text}">${st.label}</div>
+        <div class="alert-dot" style="background:${urgent?'var(--red)':expiring?'var(--purple)':stale?'var(--amber)':'transparent'}"></div>
+      </div>
+      <div class="pa-expanded ${exp?'open':''}">
+        ${renderLifecycle(pa)}
+        ${urgent?`<div style="color:var(--red);font-size:0.78rem;font-weight:600;margin-bottom:0.75rem">🚨 Appeal deadline in ${daysUntil(pa.appealDeadline)} day(s) — file immediately</div>`:''}
+        ${expiring?`<div style="color:var(--purple);font-size:0.78rem;font-weight:600;margin-bottom:0.75rem">⏰ Authorization expires in ${daysLeft} days — initiate renewal</div>`:''}
+        <div class="detail-grid">
+          <div><div class="detail-label">Patient ID</div><div class="detail-value mono">${pa.patientCode}</div></div>
+          <div><div class="detail-label">Payer</div><div class="detail-value">${pa.payer}</div></div>
+          <div><div class="detail-label">Provider</div><div class="detail-value">${pa.provider||'—'}</div></div>
+          <div><div class="detail-label">Service Type</div><div class="detail-value">${svc.label}</div></div>
+          <div><div class="detail-label">Medication / Service</div><div class="detail-value">${pa.serviceName}</div></div>
+          <div><div class="detail-label">Diagnosis (ICD-10)</div><div class="detail-value mono">${pa.diagnosisCode||'—'}</div></div>
+          <div><div class="detail-label">Date Submitted</div><div class="detail-value">${pa.dateSubmitted||'—'}${daysSinceSubmit!==null?' ('+daysSinceSubmit+'d ago)':''}</div></div>
+          <div><div class="detail-label">Method</div><div class="detail-value">${pa.submissionMethod||'—'}</div></div>
+          ${pa.authNumber?`<div><div class="detail-label">Auth Number</div><div class="detail-value mono green">${pa.authNumber}</div></div>`:'<div></div>'}
+          ${pa.approvalStartDate?`<div><div class="detail-label">Approval Period</div><div class="detail-value green">${pa.approvalStartDate} → ${pa.approvalEndDate||'—'}${daysLeft!==null?' ('+daysLeft+'d left)':''}</div></div>`:''}
+          ${pa.unitsApproved?`<div><div class="detail-label">Units Approved</div><div class="detail-value">${pa.unitsApproved}</div></div>`:''}
+          ${pa.denialReason?`<div><div class="detail-label">Denial Reason</div><div class="detail-value red">${pa.denialReason}</div></div>`:''}
+          ${pa.appealDeadline?`<div><div class="detail-label">Appeal Deadline</div><div class="detail-value ${daysUntil(pa.appealDeadline)<=2?'red':daysUntil(pa.appealDeadline)<=7?'amber':''}">${pa.appealDeadline} (${daysUntil(pa.appealDeadline)}d)</div></div>`:''}
+          ${pa.followUpDate?`<div><div class="detail-label">Follow-up Date</div><div class="detail-value">${pa.followUpDate}</div></div>`:''}
+        </div>
+        ${pa.notes?`<div class="detail-notes">${pa.notes}</div>`:''}
+        <div class="quick-status-label">Update Status</div>
+        <div class="quick-pills">${quickPills}</div>
+        <div class="exp-actions">
+          <button class="btn-sm-sec" onclick="startEdit('${pa.id}')">Edit Record</button>
+          <button class="btn-sm-email" onclick="sendCardReminder('${pa.id}')">📧 Send Reminder</button>
+          <button class="btn-sm-danger" onclick="deletePa('${pa.id}')">Delete</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+// INIT
+load();
+checkReminders();
+render();
+</script>
+</body>
+</html>
