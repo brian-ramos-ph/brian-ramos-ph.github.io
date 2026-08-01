@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spravato Program Coordinator — Brian T. Ramos</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #fff;
+    color: #1E293B;
+    font-size: 9.5pt;
+    line-height: 1.55;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .page {
+    width: 8.5in;
+    min-height: 11in;
+    margin: 0 auto;
+    padding: 0.55in 0.6in 0.5in;
+  }
+
+  /* HEADER */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 0.2in;
+    border-bottom: 2.5px solid #0F172A;
+    margin-bottom: 0.18in;
+  }
+  .header-left {}
+  .name {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 22pt;
+    font-weight: 700;
+    color: #0F172A;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin-bottom: 0.05in;
+  }
+  .title {
+    font-size: 9.5pt;
+    font-weight: 600;
+    color: #0369A1;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .header-right {
+    text-align: right;
+    font-size: 8.5pt;
+    color: #475569;
+    line-height: 1.65;
+  }
+  .header-right a { color: #0369A1; text-decoration: none; }
+  .header-right strong { color: #1E293B; }
+
+  /* INTRO */
+  .intro {
+    font-size: 9pt;
+    color: #334155;
+    line-height: 1.65;
+    margin-bottom: 0.18in;
+    padding-bottom: 0.15in;
+    border-bottom: 1px solid #E2E8F0;
+  }
+
+  /* BODY LAYOUT */
+  .body { display: grid; grid-template-columns: 1fr 2.2fr; gap: 0.25in; }
+
+  /* LEFT COLUMN */
+  .left {}
+
+  /* RIGHT COLUMN */
+  .right {}
+
+  /* SECTIONS */
+  .section { margin-bottom: 0.15in; }
+  .section-title {
+    font-size: 7.5pt;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #0369A1;
+    margin-bottom: 0.07in;
+    padding-bottom: 0.04in;
+    border-bottom: 1px solid #BAE6FD;
+  }
+
+  /* PATHWAY BLOCKS */
+  .pathway { margin-bottom: 0.12in; }
+  .pathway-label {
+    font-size: 8.5pt;
+    font-weight: 600;
+    color: #0F172A;
+    margin-bottom: 0.04in;
+    display: flex;
+    align-items: center;
+    gap: 0.05in;
+  }
+  .pathway-label::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 0.12in;
+    background: #0369A1;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  ul { padding-left: 0.15in; }
+  ul li {
+    margin-bottom: 0.03in;
+    color: #334155;
+    font-size: 9pt;
+  }
+  ul li::marker { color: #0369A1; }
+  .billing-note {
+    font-size: 8.5pt;
+    color: #475569;
+    font-style: italic;
+    margin-top: 0.06in;
+    padding-left: 0.05in;
+    border-left: 2px solid #CBD5E1;
+  }
+
+  /* DEMONSTRATED WORK */
+  .work-item {
+    margin-bottom: 0.08in;
+    padding-left: 0.12in;
+    border-left: 2px solid #BAE6FD;
+  }
+  .work-label {
+    font-size: 8pt;
+    font-weight: 600;
+    color: #0F172A;
+    margin-bottom: 0.02in;
+  }
+  .work-detail {
+    font-size: 8.5pt;
+    color: #334155;
+    line-height: 1.5;
+  }
+
+  /* LEFT COLUMN ITEMS */
+  .skill-list { list-style: none; padding: 0; }
+  .skill-list li {
+    font-size: 8.5pt;
+    color: #334155;
+    padding: 0.025in 0;
+    border-bottom: 1px solid #F1F5F9;
+  }
+  .skill-list li:last-child { border-bottom: none; }
+
+  .payer-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.03in;
+  }
+  .payer-chip {
+    font-size: 7.5pt;
+    color: #334155;
+    background: #F0F9FF;
+    border: 1px solid #BAE6FD;
+    border-radius: 3px;
+    padding: 0.02in 0.05in;
+    text-align: center;
+  }
+
+  .ehr-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.03in;
+  }
+  .ehr-chip {
+    font-size: 7.5pt;
+    color: #334155;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 3px;
+    padding: 0.02in 0.05in;
+    text-align: center;
+  }
+
+  /* AVAILABILITY BADGE */
+  .avail {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.05in;
+    background: #F0FDF4;
+    border: 1px solid #BBF7D0;
+    border-radius: 99px;
+    padding: 0.03in 0.1in;
+    font-size: 8pt;
+    font-weight: 600;
+    color: #166534;
+    margin-top: 0.08in;
+  }
+  .avail-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #22C55E;
+  }
+
+  /* FOOTER */
+  .footer {
+    margin-top: 0.15in;
+    padding-top: 0.1in;
+    border-top: 1px solid #E2E8F0;
+    font-size: 7.5pt;
+    color: #94A3B8;
+    text-align: center;
+  }
+
+  /* PRINT */
+  @media print {
+    body { font-size: 9pt; }
+    .page { padding: 0.5in 0.55in 0.45in; }
+    @page { margin: 0; size: letter; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="name">Brian T. Ramos</div>
+      <div class="title">Spravato Program Coordinator &nbsp;·&nbsp; Remote Psychiatric Practice Administrator</div>
+    </div>
+    <div class="header-right">
+      <strong>Philippines-based · Remote</strong><br>
+      brianramos914@gmail.com<br>
+      +63 915 541 1221<br>
+      <a href="https://brian-ramos-ph.github.io">brian-ramos-ph.github.io</a>
+    </div>
+  </div>
+
+  <!-- INTRO -->
+  <div class="intro">
+    I am a remote psychiatric practice administrator with hands-on experience managing a complete Spravato (esketamine nasal spray) program — developed by Janssen Pharmaceuticals, a Johnson &amp; Johnson company — across both the buy-and-bill and specialty pharmacy pathways. Spravato is an FDA-approved, later-line treatment for treatment-resistant depression (TRD) administered under a Risk Evaluation and Mitigation Strategy (REMS) program, which carries specific administrative requirements that most practice staff are unfamiliar with. I have managed those requirements end-to-end in an outpatient psychiatric setting.
+  </div>
+
+  <!-- BODY -->
+  <div class="body">
+
+    <!-- LEFT COLUMN -->
+    <div class="left">
+
+      <div class="section">
+        <div class="section-title">Availability</div>
+        <ul class="skill-list">
+          <li>Philippines-based, fully remote</li>
+          <li>Part-time or full-time</li>
+          <li>US-based practice experience</li>
+        </ul>
+        <div class="avail"><div class="avail-dot"></div>Open to Opportunities</div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Payer Experience</div>
+        <div class="payer-grid">
+          <div class="payer-chip">BCBS</div>
+          <div class="payer-chip">Cigna</div>
+          <div class="payer-chip">UHC / Optum</div>
+          <div class="payer-chip">Aetna</div>
+          <div class="payer-chip">TRICARE</div>
+          <div class="payer-chip">Healthy Blue</div>
+          <div class="payer-chip">Anthem</div>
+          <div class="payer-chip">Medicaid</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Specialty Pharmacies</div>
+        <div class="payer-grid">
+          <div class="payer-chip">Accredo</div>
+          <div class="payer-chip">Genoa</div>
+          <div class="payer-chip">Lakeside</div>
+          <div class="payer-chip">CVS</div>
+          <div class="payer-chip">Walgreens</div>
+          <div class="payer-chip">Novant</div>
+          <div class="payer-chip">PhilRx</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">EHR Platforms</div>
+        <div class="ehr-grid">
+          <div class="ehr-chip">CharmHealth</div>
+          <div class="ehr-chip">AdvancedMD</div>
+          <div class="ehr-chip">iCaNotes</div>
+          <div class="ehr-chip">Practice Fusion</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Broader Admin Skills</div>
+        <ul class="skill-list">
+          <li>Psychiatric Rx management</li>
+          <li>Insurance verification (VOB)</li>
+          <li>Prior authorization (all payers)</li>
+          <li>Treatment scheduling</li>
+          <li>Patient &amp; provider coordination</li>
+          <li>HIPAA-compliant documentation</li>
+          <li>Clinical SOP development</li>
+          <li>Google Workspace automation</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="right">
+
+      <div class="section">
+        <div class="section-title">Spravato Program Expertise</div>
+
+        <div class="pathway">
+          <div class="pathway-label">Buy-and-Bill</div>
+          <ul>
+            <li>Inventory management and Henry Schein coordination</li>
+            <li>Initiated payer-specific benefit verification (VOB) to determine buy-and-bill eligibility vs specialty pharmacy routing</li>
+            <li>J-code and G-code billing routing coordination (J0013, G2082, G2083)</li>
+            <li>Lot-level inventory tracking and audit trail documentation</li>
+          </ul>
+        </div>
+
+        <div class="pathway">
+          <div class="pathway-label">Specialty Pharmacy</div>
+          <ul>
+            <li>Prior authorization submission and daily status monitoring across pharmacy and medical benefits</li>
+            <li>Payer-specific approval workflows across BCBS, Cigna, UHC, Aetna, TRICARE, and Medicaid</li>
+            <li>Providing additional clinical information in response to pharmacy benefits PA denials</li>
+            <li>Prescription transmission coordination to payer-preferred specialty pharmacies</li>
+            <li>Shipment follow-up with specialty pharmacies through confirmed delivery</li>
+          </ul>
+        </div>
+
+        <div class="billing-note">
+          Across both pathways, I coordinate closely with billing on payment and reimbursement — I do not handle billing directly.
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Demonstrated Work — Selected Examples</div>
+
+        <div class="work-item">
+          <div class="work-label">Inventory Reconciliation</div>
+          <div class="work-detail">Resolved a 3-box Spravato inventory discrepancy by auditing 16 REMS Patient Monitoring Forms, cross-referencing lot-by-lot consumption against delivery records, and tracing the gap to phantom and duplicate entries. Coordinated with on-site personnel to verify physical stock and confirm safe counts. Maintained full audit trail per REMS requirements.</div>
+        </div>
+
+        <div class="work-item">
+          <div class="work-label">Payer Routing Determination</div>
+          <div class="work-detail">Initiated benefit verification (VOB) across four patients to determine correct Spravato coverage pathway. Identified formulary exclusions (Cigna/OptumRx) and pharmacy benefit plan exclusions (BCBS TX/Prime Therapeutics) to confirm appropriate routing for each case.</div>
+        </div>
+
+        <div class="work-item">
+          <div class="work-label">PA Denial Management</div>
+          <div class="work-detail">Drafted a PA reconsideration letter to Optum Rx for a Spravato denial, building the clinical argument around two distinct pharmacologic class antidepressant trials within a continuous, uninterrupted MDD episode. Coordinated with previous providers to obtain supporting clinical documents, specifically medication history and prescription records. Identified qualifying vs non-qualifying medications from the patient's regimen to strengthen and protect the appeal.</div>
+        </div>
+
+        <div class="work-item">
+          <div class="work-label">Payer Policy Research</div>
+          <div class="work-detail">Researched BCBS TX esketamine policy (RX501.105) and BCBS NC notification policy to assess post-service denial risk and confirm buy-and-bill code recognition. Applied findings to inform clinical decision-making on extended induction phases per Janssen/FDA guidelines.</div>
+        </div>
+
+        <div class="work-item">
+          <div class="work-label">SOP Development</div>
+          <div class="work-detail">Developed Spravato administrative SOP covering both pathways — including REMS/PMF compliance, PA monitoring workflows, denial escalation, chart documentation standards, and buy-and-bill ordering procedures — for submission to Henry Schein.</div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <div class="footer">
+    Brian T. Ramos · Spravato Program Coordinator · brianramos914@gmail.com · +63 915 541 1221 · brian-ramos-ph.github.io
+  </div>
+
+</div>
+</body>
+</html>
